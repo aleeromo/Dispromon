@@ -122,15 +122,6 @@ function Cell({ column, item, onUpdate, readOnly, directorio, onOpenHojaTrabajo,
   const common = { value, itemId: item.id, columnId: column.id, onUpdate };
   const isLocked = locked && COLUMNS_LOCKED_UNTIL_APROBADO.includes(column.title);
 
-  if (column.title === 'Folio' && readOnly) {
-    const text = value?.text ?? (typeof value === 'string' ? value : '');
-    return (
-      <div className="py-2 px-2 text-sm text-gray-300">
-        {text || '—'}
-      </div>
-    );
-  }
-
   if ((column.type === 'hoja_trabajo' || column.title === 'Hoja de Trabajo' || column.title === 'Hoja de trabajo') && directorio) {
     return (
       <div className="py-2 px-2">
@@ -484,7 +475,7 @@ export default function BoardTable({ board, onRefresh, directorio, tableVariant 
                           column={col}
                           item={item}
                           onUpdate={(value) => handleCellUpdate(item.id, col.id, value)}
-                          readOnly={directorio && col.title === 'Folio'}
+                          readOnly={false}
                           directorio={directorio}
                           onOpenHojaTrabajo={setHojaDrawerItem}
                           locked={directorio && !isItemApproved(item)}

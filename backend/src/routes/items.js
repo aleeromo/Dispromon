@@ -33,9 +33,6 @@ router.post('/', async (req, res) => {
     if (!board) return res.status(400).json({ error: 'Board no encontrado' });
 
     const count = await prisma.item.count({ where: { groupId } });
-    const year = (board.mes_registro || getCurrentMesRegistro()).slice(0, 4);
-    const num = board.nextFolioNumber;
-    const folio = `OT-${year}-${String(num).padStart(3, '0')}`;
 
     const item = await prisma.item.create({
       data: {
@@ -49,7 +46,7 @@ router.post('/', async (req, res) => {
     for (const col of board.columns) {
       let value = null;
       if (col.type === 'status') value = JSON.stringify({ optionId: null });
-      if (col.title === 'Folio') value = JSON.stringify({ text: folio });
+      if (col.title === 'Folio') value = JSON.stringify({ text: '' });
       if (col.type === 'hoja_trabajo') value = JSON.stringify({});
       await prisma.itemValue.create({
         data: {
@@ -60,16 +57,11 @@ router.post('/', async (req, res) => {
       });
     }
 
-    await prisma.board.update({
-      where: { id: board.id },
-      data: { nextFolioNumber: board.nextFolioNumber + 1 },
-    });
-
     const mesRegistro = board.mes_registro || getCurrentMesRegistro();
     createProjectFolder({
       mesRegistro,
       clienteName: item.name,
-      folio,
+      folio: '', // Folio manual: el usuario lo escribe en la tabla
     });
 
     const full = await prisma.item.findUnique({

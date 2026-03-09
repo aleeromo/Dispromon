@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { getUsers, register } from '../api/client';
+import { getUsers, register, deleteUser } from '../api/client';
 import { useRole } from '../hooks/useRole';
+import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../hooks/useRole';
 
 export default function GestionUsuarios() {
   const { isAdmin } = useRole();
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,6 +14,7 @@ export default function GestionUsuarios() {
   const [password, setPassword] = useState('');
   const [rol, setRol] = useState('VENTAS');
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (isAdmin) load();
@@ -48,6 +51,20 @@ export default function GestionUsuarios() {
       setError(e.message || 'Error al crear usuario');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(u) {
+    if (!window.confirm(`¿Eliminar el usuario "${u.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setError('');
+    setDeletingId(u.id);
+    try {
+      await deleteUser(u.id);
+      await load();
+    } catch (e) {
+      setError(e.message || 'Error al eliminar usuario');
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -130,15 +147,33 @@ export default function GestionUsuarios() {
               <tr className="border-b border-dark-border text-left text-gray-400 text-sm">
                 <th className="py-3 px-4 font-medium">Nombre</th>
                 <th className="py-3 px-4 font-medium">Rol</th>
+                <th className="py-3 px-4 font-medium w-24 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-dark-border last:border-0">
-                  <td className="py-3 px-4 text-white">{u.nombre}</td>
-                  <td className="py-3 px-4 text-gray-300">{u.rol}</td>
-                </tr>
-              ))}
+              {users.map((u) => {
+                const isCurrentUser = user?.id === u.id;
+                return (
+                  <tr key={u.id} className="border-b border-dark-border last:border-0">
+                    <td className="py-3 px-4 text-white">{u.nombre}</td>
+                    <td className="py-3 px-4 text-gray-300">{u.rol}</td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(u)}
+                        disabled={isCurrentUser || deletingId === u.id}
+                        title={isCurrentUser ? 'No puedes eliminar tu propio perfil' : 'Eliminar usuario'}
+                        className="p-2 rounded text-gray-500 hover:bg-red-500/20 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
+                        aria-label="Eliminar usuario"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

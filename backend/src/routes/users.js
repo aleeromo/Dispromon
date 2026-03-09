@@ -39,4 +39,28 @@ router.get('/profiles', authMiddleware, async (_req, res) => {
   }
 });
 
+/**
+ * DELETE /api/users/:id
+ * Solo ADMIN. Elimina un perfil de usuario. No se puede eliminar a uno mismo.
+ */
+router.delete('/:id', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const currentUserId = req.user?.id;
+    if (currentUserId && userId === currentUserId) {
+      return res.status(400).json({ error: 'No puedes eliminar tu propio perfil' });
+    }
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    if (e.code === 'P2025') {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    console.error(e);
+    res.status(500).json({ error: 'Error al eliminar usuario' });
+  }
+});
+
 export default router;

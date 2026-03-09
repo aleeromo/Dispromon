@@ -68,6 +68,15 @@ export async function getUsers() {
   return r.json();
 }
 
+export async function deleteUser(id) {
+  const r = await fetchWithAuth(API + '/users/' + encodeURIComponent(id), { method: 'DELETE' });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    throw new Error(data.error || await r.text());
+  }
+  return r.json();
+}
+
 /** Perfiles para asignación (cualquier usuario autenticado) */
 export async function getUsersProfiles() {
   const r = await fetchWithAuth(API + '/users/profiles');
