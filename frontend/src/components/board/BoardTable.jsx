@@ -7,6 +7,93 @@ import {
   createColumn,
 } from '../../api/client';
 import CellStatus from './cells/CellStatus';
+
+function InlineEditCell({
+  displayValue,
+  onSave,
+  placeholder = 'Texto',
+  controlledEditing,
+  onStartEdit,
+  onEndEdit,
+}) {
+  const [internalEditing, setInternalEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(displayValue);
+  const inputRef = useRef(null);
+  const isControlled = controlledEditing !== undefined;
+  const isEditing = isControlled ? controlledEditing : internalEditing;
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
+    setInputValue(displayValue);
+  }, [displayValue]);
+
+  function startEdit() {
+    setInputValue(displayValue);
+    if (isControlled) {
+      onStartEdit?.();
+    } else {
+      setInternalEditing(true);
+    }
+  }
+
+  function commitEdit() {
+    const v = String(inputValue ?? '').trim();
+    if (v !== String(displayValue ?? '').trim()) {
+      onSave(v);
+    }
+    if (isControlled) {
+      onEndEdit?.();
+    } else {
+      setInternalEditing(false);
+    }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitEdit();
+    }
+    if (e.key === 'Escape') {
+      setInputValue(displayValue);
+      if (isControlled) onEndEdit?.();
+      else setInternalEditing(false);
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <div className="py-2">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="w-full bg-dark-card text-white border border-accent outline-none py-1.5 px-2 rounded text-sm placeholder-gray-500 focus:ring-1 ring-accent"
+        />
+      </div>
+    );
+  }
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={startEdit}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && startEdit()}
+      className="py-2 min-h-[32px] px-2 rounded-monday cursor-pointer text-left text-sm text-white hover:bg-dark-hover border border-transparent hover:border-dark-border"
+    >
+      {displayValue || <span className="text-gray-500">{placeholder}</span>}
+    </div>
+  );
+}
 import CellTimeline from './cells/CellTimeline';
 import CellPeople from './cells/CellPeople';
 import CellDate from './cells/CellDate';
@@ -181,6 +268,18 @@ function Cell({ column, item, onUpdate, readOnly, directorio, onOpenHojaTrabajo,
     );
   }
 
+  if (column.title === 'Folio') {
+    return (
+      <div className={isLocked ? 'opacity-60 pointer-events-none' : ''}>
+        <InlineEditCell
+          displayValue={value?.text ?? ''}
+          onSave={(text) => onUpdate({ text })}
+          placeholder="Folio"
+        />
+      </div>
+    );
+  }
+
   if (column.type === 'status') {
     return (
       <div className={isLocked ? 'opacity-60 pointer-events-none' : ''}>
@@ -230,6 +329,7 @@ export default function BoardTable({ board, onRefresh, directorio, tableVariant 
   const [addingCol, setAddingCol] = useState(false);
   const addColRef = useRef(null);
   const [users, setUsers] = useState([]);
+  const [editingNameItemId, setEditingNameItemId] = useState(null);
 
   const [hojaDrawerItem, setHojaDrawerItem] = useState(null);
   const [levantamientoModalItem, setLevantamientoModalItem] = useState(null);
@@ -429,15 +529,13 @@ export default function BoardTable({ board, onRefresh, directorio, tableVariant 
                   className="border-b border-dark-border hover:bg-dark-hover/30 transition-colors"
                 >
                   <td className="py-1 px-4 border-r border-dark-border align-top min-w-[200px]">
-                    <input
-                      type="text"
-                      defaultValue={item.name}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v !== item.name) handleUpdateItemName(item.id, v || (directorio ? 'Sin nombre' : 'Sin título'));
-                      }}
-                      className="w-full bg-transparent text-white border-none outline-none py-2 rounded px-1 hover:bg-dark-card focus:bg-dark-card focus:ring-1 ring-accent"
-                      placeholder={directorio ? 'Nombre del cliente' : undefined}
+                    <InlineEditCell
+                      displayValue={item.name || ''}
+                      onSave={(v) => handleUpdateItemName(item.id, v || (directorio ? 'Sin nombre' : 'Sin título'))}
+                      placeholder={directorio ? 'Nombre del cliente' : 'Sin título'}
+                      controlledEditing={editingNameItemId === item.id}
+                      onStartEdit={() => setEditingNameItemId(item.id)}
+                      onEndEdit={() => setEditingNameItemId(null)}
                     />
                   </td>
                   {displayColumns.map((col) => (
