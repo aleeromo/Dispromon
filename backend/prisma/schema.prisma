@@ -12,7 +12,10 @@ model User {
   nombre         String   @unique  // identificador único para login (nombre de usuario)
   password       String
   rol            String   // ADMIN | VENTAS | DISENO | TALLER
-  itemsAsignado  Item[]   @relation("AsignadoA")
+  assignedItems  Item[]   @relation("ItemAssignments")
+  tasks          Task[]
+  auditLogs      AuditLog[]
+  updates        Update[]
 }
 
 model Workspace {
@@ -67,12 +70,16 @@ model Item {
   groupId                 String
   group                   Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   values                  ItemValue[]
-  asignado_a_id           String?
-  asignado_a              User?     @relation("AsignadoA", fields: [asignado_a_id], references: [id], onDelete: SetNull)
+  usersAssigned           User[]    @relation("ItemAssignments")
+  dateRangeStart          DateTime?
+  dateRangeEnd            DateTime?
   estatus_ventas          String?   // Cotizando | Cotización enviada | APROBADO
   estatus_taller          String?   @default("Pendiente") // Pendiente | En Producción | Terminado
   fecha_inicio_produccion DateTime?
   fecha_fin_produccion    DateTime?
+  ruta_archivo            String?   // Ruta local, ej. Z:\Diseños
+  tasks                   Task[]
+  updates                 Update[]
 }
 
 model Column {
@@ -94,4 +101,41 @@ model ItemValue {
   column    Column  @relation(fields: [columnId], references: [id], onDelete: Cascade)
   value     String? // JSON según tipo de columna
   @@unique([itemId, columnId])
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  itemId      String?
+  item        Item?    @relation(fields: [itemId], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // ej. CAMBIO_ESTATUS, ASIGNACION
+  entity    String   // ej. ITEM
+  entityId  String   // ID del registro afectado
+  details   String?  // JSON con { oldStatus, newStatus } o similares
+  createdAt DateTime @default(now())
+
+  userId    String?  // Quién hizo el cambio
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Update {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

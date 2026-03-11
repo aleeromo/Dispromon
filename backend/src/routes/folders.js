@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     if (!workspaceId || !name?.trim()) {
       return res.status(400).json({ error: 'workspaceId y name requeridos' });
     }
-    const pid = parentId === undefined || parentId === '' ? null : String(parentId).trim() || null;
+    const pid = (parentId === undefined || parentId === null || parentId === '') ? null : String(parentId).trim() || null;
 
     if (pid) {
       const parent = await prisma.folder.findUnique({

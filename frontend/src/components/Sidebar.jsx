@@ -4,7 +4,7 @@ import { getWorkspaces, getFolders, createFolder, createWorkspace, updateFolder,
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../hooks/useRole';
 
-function FolderIcon({ className = 'w-4 h-4 text-gray-400' }) {
+function FolderIcon({ className = 'w-4 h-4 text-monday-text-muted' }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20" aria-hidden>
       <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
@@ -12,7 +12,7 @@ function FolderIcon({ className = 'w-4 h-4 text-gray-400' }) {
   );
 }
 
-function FolderOpenIcon({ className = 'w-4 h-4 text-gray-400' }) {
+function FolderOpenIcon({ className = 'w-4 h-4 text-monday-text-muted' }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 20 20" aria-hidden>
       <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clipRule="evenodd" />
@@ -145,6 +145,7 @@ export default function Sidebar() {
       await createFolder(proyId, newSubfolderName.trim(), parentId);
       setNewSubfolderName('');
       setAddingSubfolderParentId(null);
+      setExpandedFolderIds(prev => new Set([...prev, parentId])); // Auto-expand
       await load();
     } catch (e) {
       console.error(e);
@@ -169,6 +170,7 @@ export default function Sidebar() {
       await createFolder(wsId, newClientSubfolderName.trim(), parentFolderId);
       setNewClientSubfolderName('');
       setAddingClientSubfolderParentId(null);
+      setExpandedFolderIds(prev => new Set([...prev, 'cf-' + parentFolderId])); // Auto-expand
       await load();
     } catch (e) {
       console.error(e);
@@ -258,30 +260,34 @@ export default function Sidebar() {
     const hasChildren = folder.children?.length > 0;
     const isExpanded = expandedFolderIds.has(folder.id);
     const isActive = pathname === pathPrefix || pathname.startsWith(pathPrefix + '/');
-    const pl = 6 + level * 12;
+    const plRem = 0.5 + level * 1.5; // Starts at 0.5rem, adds 1.5rem per level
+    
     return (
       <li key={folder.id} className="group relative">
         {editingFolderId === folder.id ? (
-          <div className="flex items-center gap-1 py-1 px-2" style={{ paddingLeft: pl }}>
+          <div className="flex items-center gap-1 py-1 px-2 mb-1" style={{ paddingLeft: `${plRem}rem` }}>
             <input
               type="text"
               value={editingFolderName}
               onChange={(e) => setEditingFolderName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && saveFolderEdit()}
-              className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded px-2 py-1 text-sm text-white"
+              className="flex-1 min-w-0 bg-white border border-monday-border rounded px-2 py-1 text-sm text-monday-text"
               autoFocus
             />
             <button type="button" onClick={saveFolderEdit} className="px-2 py-1 rounded text-accent text-xs">Guardar</button>
-            <button type="button" onClick={() => { setEditingFolderId(null); setEditingFolderName(''); }} className="px-2 py-1 rounded text-gray-400 text-xs">Cancelar</button>
+            <button type="button" onClick={() => { setEditingFolderId(null); setEditingFolderName(''); }} className="px-2 py-1 rounded text-monday-text-muted text-xs">Cancelar</button>
           </div>
         ) : (
           <>
-            <div className="relative flex items-center gap-0.5" style={{ paddingLeft: pl }}>
+            <div 
+              className={`relative flex items-center gap-1 mb-1 border-l-2 ${level > 0 ? 'border-monday-border' : 'border-transparent'}`} 
+              style={{ paddingLeft: `${plRem}rem`, marginLeft: level > 0 ? `${(level - 1) * 1.5 + 0.75}rem` : '0', width: level > 0 ? `calc(100% - ${(level - 1) * 1.5 + 0.75}rem)` : '100%' }}
+            >
               {hasChildren ? (
                 <button
                   type="button"
                   onClick={() => toggleFolderExpanded(folder.id)}
-                  className="p-0.5 rounded text-gray-500 hover:text-white shrink-0"
+                  className="p-0.5 rounded text-monday-text-muted hover:bg-monday-hover hover:text-monday-text shrink-0"
                   aria-label={isExpanded ? 'Contraer' : 'Expandir'}
                 >
                   <svg className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
@@ -294,17 +300,17 @@ export default function Sidebar() {
               <Link
                 to={basePath + '/' + folder.id + '/board'}
                 className={`flex-1 flex items-center gap-2 py-2 px-2 rounded-monday text-sm truncate pr-12 ${
-                  isActive ? 'bg-accent/20 text-accent font-medium' : 'text-gray-300 hover:bg-dark-hover hover:text-white'
+                  isActive ? 'bg-monday-primary/10 text-monday-primary font-medium' : 'text-monday-text hover:bg-monday-hover'
                 }`}
               >
-                <FolderIcon className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <FolderIcon className="w-3.5 h-3.5 text-monday-text-muted shrink-0" />
                 {folder.name}
               </Link>
               <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAddingSubfolderParentId(folder.id); setNewSubfolderName(''); setMenuOpenId(null); }}
-                  className="p-1 rounded text-gray-500 hover:bg-dark-hover hover:text-accent"
+                  className="p-1 rounded text-monday-text-muted hover:bg-monday-hover hover:text-monday-primary"
                   title="Nueva subcarpeta"
                   aria-label="Nueva subcarpeta"
                 >
@@ -313,32 +319,32 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenId(menuOpenId === 'folder-' + folder.id ? null : 'folder-' + folder.id); }}
-                  className="p-1 rounded text-gray-500 hover:bg-dark-hover hover:text-white"
+                  className="p-1 rounded text-monday-text-muted hover:bg-monday-hover hover:text-monday-text"
                   aria-label="Opciones"
                 >
                   <DotsIcon className="w-4 h-4" />
                 </button>
                 {menuOpenId === 'folder-' + folder.id && (
-                  <div className="absolute right-0 top-full mt-1 z-30 py-1 min-w-[120px] bg-dark-card border border-dark-border rounded-monday shadow-xl" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" onClick={() => openFolderEdit(folder)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-dark-hover">Editar</button>
-                    <button type="button" onClick={() => handleDeleteFolder(folder.id)} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-dark-hover">Eliminar</button>
+                  <div className="absolute right-0 top-full mt-1 z-30 py-1 min-w-[120px] bg-white border border-monday-border rounded-monday shadow-xl" onClick={(e) => e.stopPropagation()}>
+                    <button type="button" onClick={() => openFolderEdit(folder)} className="w-full text-left px-3 py-2 text-sm text-monday-text hover:bg-monday-hover">Editar</button>
+                    <button type="button" onClick={() => handleDeleteFolder(folder.id)} className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-monday-hover">Eliminar</button>
                   </div>
                 )}
               </div>
             </div>
             {addingSubfolderParentId === folder.id && (
-              <div className="flex gap-1 py-2" style={{ paddingLeft: pl + 16 }}>
+              <div className="flex gap-1 py-2 mb-1 border-l-2 border-monday-border" style={{ paddingLeft: `1rem`, marginLeft: `${level * 1.5 + 0.75}rem` }}>
                 <input
                   type="text"
                   value={newSubfolderName}
                   onChange={(e) => setNewSubfolderName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateSubfolder(folder.id)}
                   placeholder="Nombre subcarpeta"
-                  className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded-monday px-2 py-1 text-sm text-white placeholder-gray-500"
+                  className="flex-1 min-w-0 bg-white border border-monday-border rounded-monday px-2 py-1 text-sm text-monday-text placeholder-monday-text-muted"
                   autoFocus
                 />
-                <button type="button" onClick={() => handleCreateSubfolder(folder.id)} disabled={!newSubfolderName.trim()} className="px-2 py-1 rounded-monday bg-accent text-white text-sm disabled:opacity-50">Añadir</button>
-                <button type="button" onClick={() => { setAddingSubfolderParentId(null); setNewSubfolderName(''); }} className="px-2 py-1 rounded-monday text-gray-400 hover:text-white text-sm">Cancelar</button>
+                <button type="button" onClick={() => handleCreateSubfolder(folder.id)} disabled={!newSubfolderName.trim()} className="px-2 py-1 rounded-monday bg-monday-primary text-white text-sm disabled:opacity-50">Añadir</button>
+                <button type="button" onClick={() => { setAddingSubfolderParentId(null); setNewSubfolderName(''); }} className="px-2 py-1 rounded-monday text-monday-text-muted hover:text-monday-text text-sm">Cancelar</button>
               </div>
             )}
             {hasChildren && isExpanded && (
@@ -356,18 +362,22 @@ export default function Sidebar() {
     const hasChildren = folder.children?.length > 0;
     const isExpanded = expandedFolderIds.has('cf-' + folder.id);
     const isActive = pathname === pathPrefix || pathname.startsWith(pathPrefix + '/');
-    const pl = 6 + level * 12;
+    const plRem = 0.5 + level * 1.5;
+    
     return (
       <li key={folder.id} className="group relative">
         {editingFolderId === folder.id ? (
-          <div className="flex items-center gap-1 py-1 px-2" style={{ paddingLeft: pl }}>
+          <div className="flex items-center gap-1 py-1 px-2 mb-1" style={{ paddingLeft: `${plRem}rem` }}>
             <input type="text" value={editingFolderName} onChange={(e) => setEditingFolderName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveFolderEdit()} className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded px-2 py-1 text-sm text-white" autoFocus />
             <button type="button" onClick={saveFolderEdit} className="px-2 py-1 rounded text-accent text-xs">Guardar</button>
-            <button type="button" onClick={() => { setEditingFolderId(null); setEditingFolderName(''); }} className="px-2 py-1 rounded text-gray-400 text-xs">Cancelar</button>
+            <button type="button" onClick={() => { setEditingFolderId(null); setEditingFolderName(''); }} className="px-2 py-1 rounded text-monday-text-muted text-xs">Cancelar</button>
           </div>
         ) : (
           <>
-            <div className="relative flex items-center gap-0.5" style={{ paddingLeft: pl }}>
+            <div 
+              className={`relative flex items-center gap-1 mb-1 border-l-2 ${level > 0 ? 'border-monday-border' : 'border-transparent'}`} 
+              style={{ paddingLeft: `${plRem}rem`, marginLeft: level > 0 ? `${(level - 1) * 1.5 + 0.75}rem` : '0', width: level > 0 ? `calc(100% - ${(level - 1) * 1.5 + 0.75}rem)` : '100%' }}
+            >
               {hasChildren ? (
                 <button type="button" onClick={() => toggleFolderExpanded('cf-' + folder.id)} className="p-0.5 rounded text-gray-500 hover:text-white shrink-0" aria-label={isExpanded ? 'Contraer' : 'Expandir'}>
                   <svg className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
@@ -376,22 +386,22 @@ export default function Sidebar() {
                 <span className="w-3.5 inline-block shrink-0" />
               )}
               <Link to={`/cliente/${wsId}/${folder.id}/board`} className={`flex-1 flex items-center gap-2 py-2 px-2 rounded-monday text-sm truncate pr-12 ${isActive ? 'bg-accent/20 text-accent font-medium' : 'text-gray-300 hover:bg-dark-hover hover:text-white'}`}>
-                <FolderIcon className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                <FolderIcon className="w-3.5 h-3.5 text-monday-text-muted shrink-0" />
                 {folder.name}
               </Link>
               <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
                 <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAddingClientSubfolderParentId(folder.id); setNewClientSubfolderName(''); setMenuOpenId(null); }} className="p-1 rounded text-gray-500 hover:bg-dark-hover hover:text-accent" title="Nueva subcarpeta" aria-label="Nueva subcarpeta"><PlusIcon className="w-4 h-4" /></button>
                 <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenId(menuOpenId === 'cf-' + folder.id ? null : 'cf-' + folder.id); }} className="p-1 rounded text-gray-500 hover:bg-dark-hover hover:text-white" aria-label="Opciones"><DotsIcon className="w-4 h-4" /></button>
                 {menuOpenId === 'cf-' + folder.id && (
-                  <div className="absolute right-0 top-full mt-1 z-30 py-1 min-w-[120px] bg-dark-card border border-dark-border rounded-monday shadow-xl" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" onClick={() => openFolderEdit(folder)} className="w-full text-left px-3 py-2 text-sm text-white hover:bg-dark-hover">Editar</button>
-                    <button type="button" onClick={() => handleDeleteFolder(folder.id)} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-dark-hover">Eliminar</button>
+                  <div className="absolute right-0 top-full mt-1 z-30 py-1 min-w-[120px] bg-white border border-monday-border rounded-monday shadow-xl" onClick={(e) => e.stopPropagation()}>
+                    <button type="button" onClick={() => openFolderEdit(folder)} className="w-full text-left px-3 py-2 text-sm text-monday-text hover:bg-monday-hover">Editar</button>
+                    <button type="button" onClick={() => handleDeleteFolder(folder.id)} className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-monday-hover">Eliminar</button>
                   </div>
                 )}
               </div>
             </div>
             {addingClientSubfolderParentId === folder.id && (
-              <div className="flex gap-1 py-2" style={{ paddingLeft: pl + 16 }}>
+              <div className="flex gap-1 py-2 mb-1 border-l-2 border-dark-border/50" style={{ paddingLeft: `1rem`, marginLeft: `${level * 1.5 + 0.75}rem` }}>
                 <input type="text" value={newClientSubfolderName} onChange={(e) => setNewClientSubfolderName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateClientSubfolder(wsId, folder.id)} placeholder="Nombre subcarpeta" className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded-monday px-2 py-1 text-sm text-white placeholder-gray-500" autoFocus />
                 <button type="button" onClick={() => handleCreateClientSubfolder(wsId, folder.id)} disabled={!newClientSubfolderName.trim()} className="px-2 py-1 rounded-monday bg-accent text-white text-sm disabled:opacity-50">Añadir</button>
                 <button type="button" onClick={() => { setAddingClientSubfolderParentId(null); setNewClientSubfolderName(''); }} className="px-2 py-1 rounded-monday text-gray-400 hover:text-white text-sm">Cancelar</button>
@@ -409,14 +419,14 @@ export default function Sidebar() {
   }
 
   const navContent = loading ? (
-    <div className="text-gray-400 text-sm py-4">Cargando...</div>
+    <div className="text-monday-text-muted text-sm py-4">Cargando...</div>
   ) : (
     <>
       {proyectosId && (
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <FolderIcon className="w-4 h-4 text-amber-500/90 shrink-0" />
-            <span className="text-white font-medium text-sm">PROYECTOS</span>
+            <span className="text-monday-text font-medium text-sm">PROYECTOS</span>
             <button
               type="button"
               onClick={() => setAddingFolder(true)}
@@ -435,21 +445,21 @@ export default function Sidebar() {
                 onChange={(e) => setNewFolderName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
                 placeholder="Nombre carpeta"
-                className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded-monday px-2 py-1 text-sm text-white placeholder-gray-500"
+                className="flex-1 min-w-0 bg-white border border-monday-border rounded-monday px-2 py-1 text-sm text-monday-text placeholder-monday-text-muted"
                 autoFocus
               />
               <button
                 type="button"
                 onClick={handleCreateFolder}
                 disabled={!newFolderName.trim()}
-                className="px-2 py-1 rounded-monday bg-accent text-white text-sm disabled:opacity-50"
+                className="px-2 py-1 rounded-monday bg-monday-primary text-white text-sm disabled:opacity-50"
               >
                 Añadir
               </button>
               <button
                 type="button"
                 onClick={() => { setAddingFolder(false); setNewFolderName(''); }}
-                className="px-2 py-1 rounded-monday text-gray-400 hover:text-white text-sm"
+                className="px-2 py-1 rounded-monday text-monday-text-muted hover:text-monday-text text-sm"
               >
                 Cancelar
               </button>
@@ -460,9 +470,9 @@ export default function Sidebar() {
           </ul>
         </div>
       )}
-      <div className="pt-2 border-t border-dark-border/50">
+      <div className="pt-2 border-t border-monday-border">
         <div className="flex items-center gap-2 mb-2">
-          <p className="text-gray-500 text-xs font-medium uppercase tracking-wider px-1">CLIENTES</p>
+          <p className="text-monday-text-muted text-xs font-medium uppercase tracking-wider px-1">CLIENTES</p>
           <button
             type="button"
             onClick={() => setAddingClient(true)}
@@ -481,21 +491,21 @@ export default function Sidebar() {
               onChange={(e) => setNewClientName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateClient()}
               placeholder="Nombre del cliente"
-              className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded-monday px-2 py-1 text-sm text-white placeholder-gray-500"
+              className="flex-1 min-w-0 bg-white border border-monday-border rounded-monday px-2 py-1 text-sm text-monday-text placeholder-monday-text-muted"
               autoFocus
             />
             <button
               type="button"
               onClick={handleCreateClient}
               disabled={!newClientName.trim()}
-              className="px-2 py-1 rounded-monday bg-accent text-white text-sm disabled:opacity-50"
+              className="px-2 py-1 rounded-monday bg-monday-primary text-white text-sm disabled:opacity-50"
             >
               Añadir
             </button>
             <button
               type="button"
               onClick={() => { setAddingClient(false); setNewClientName(''); }}
-              className="px-2 py-1 rounded-monday text-gray-400 hover:text-white text-sm"
+              className="px-2 py-1 rounded-monday text-monday-text-muted hover:text-monday-text text-sm"
             >
               Cancelar
             </button>
@@ -511,20 +521,20 @@ export default function Sidebar() {
                       value={editingWorkspaceName}
                       onChange={(e) => setEditingWorkspaceName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && saveWorkspaceEdit()}
-                      className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded px-2 py-1 text-sm text-white"
+                      className="flex-1 min-w-0 bg-white border border-monday-border rounded px-2 py-1 text-sm text-monday-text"
                       autoFocus
                     />
                     <button type="button" onClick={saveWorkspaceEdit} className="px-2 py-1 rounded text-accent text-xs shrink-0">Guardar</button>
-                    <button type="button" onClick={() => { setEditingWorkspaceId(null); setEditingWorkspaceName(''); }} className="px-2 py-1 rounded text-gray-400 text-xs shrink-0">Cancelar</button>
+                    <button type="button" onClick={() => { setEditingWorkspaceId(null); setEditingWorkspaceName(''); }} className="px-2 py-1 rounded text-monday-text-muted text-xs shrink-0">Cancelar</button>
                   </div>
                 ) : (
                   <>
                     <FolderOpenIcon className="w-4 h-4 text-accent/80 shrink-0" />
-                    <span className="text-white font-medium text-sm truncate flex-1 min-w-0">{ws.name}</span>
+                    <span className="text-monday-text font-medium text-sm truncate flex-1 min-w-0">{ws.name}</span>
                     <button
                       type="button"
                       onClick={() => setAddingFolderClientId(ws.id)}
-                      className="p-1 rounded text-gray-500 hover:bg-dark-hover hover:text-accent"
+                      className="p-1 rounded text-monday-text-muted hover:bg-monday-hover hover:text-monday-primary"
                       title="Nueva carpeta (ej. año)"
                       aria-label="Nueva carpeta"
                     >
@@ -534,7 +544,7 @@ export default function Sidebar() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === 'ws-' + ws.id ? null : 'ws-' + ws.id); }}
-                        className="p-1 rounded text-gray-500 hover:bg-dark-hover hover:text-white"
+                        className="p-1 rounded text-monday-text-muted hover:bg-monday-hover hover:text-monday-text"
                         aria-label="Opciones cliente"
                       >
                         <DotsIcon className="w-4 h-4" />
@@ -557,21 +567,21 @@ export default function Sidebar() {
                     onChange={(e) => setNewClientFolderName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateClientFolder(ws.id)}
                     placeholder="Ej. 2026"
-                    className="flex-1 min-w-0 bg-dark-bg border border-dark-border rounded-monday px-2 py-1 text-sm text-white placeholder-gray-500"
+                    className="flex-1 min-w-0 bg-white border border-monday-border rounded-monday px-2 py-1 text-sm text-monday-text placeholder-monday-text-muted"
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={() => handleCreateClientFolder(ws.id)}
                     disabled={!newClientFolderName.trim()}
-                    className="px-2 py-1 rounded-monday bg-accent text-white text-sm disabled:opacity-50"
+                    className="px-2 py-1 rounded-monday bg-monday-primary text-white text-sm disabled:opacity-50"
                   >
                     Añadir
                   </button>
                   <button
                     type="button"
                     onClick={() => { setAddingFolderClientId(null); setNewClientFolderName(''); }}
-                    className="px-2 py-1 rounded-monday text-gray-400 hover:text-white text-sm"
+                    className="px-2 py-1 rounded-monday text-monday-text-muted hover:text-monday-text text-sm"
                   >
                     Cancelar
                   </button>
@@ -583,18 +593,18 @@ export default function Sidebar() {
             </div>
           ))}
         {clientesWs.length === 0 && !addingClient && (
-          <p className="text-gray-500 text-sm pl-1">Añade un cliente con +</p>
+          <p className="text-monday-text-muted text-sm pl-1">Añade un cliente con +</p>
         )}
       </div>
       {!proyectosId && clientesWs.length === 0 && !addingClient && (
-        <p className="text-gray-400 text-sm">No hay workspace PROYECTOS. Ejecuta el seed.</p>
+        <p className="text-monday-text-muted text-sm">No hay workspace PROYECTOS. Ejecuta el seed.</p>
       )}
     </>
   );
 
   return (
-    <aside className="w-sidebar min-w-[260px] bg-dark-card border-r border-dark-border flex flex-col shrink-0">
-      <div className="p-4 border-b border-dark-border flex items-center justify-center min-h-[160px]">
+    <aside className="w-sidebar min-w-[260px] bg-white border-r border-monday-border flex flex-col shrink-0">
+      <div className="p-4 border-b border-monday-border flex items-center justify-center min-h-[160px]">
         <img
           src="/logo.png"
           alt=""
@@ -608,23 +618,23 @@ export default function Sidebar() {
         {isAdmin && (
           <Link
             to="/gestion-usuarios"
-            className="mb-3 flex items-center gap-2 py-2 px-3 rounded-monday text-sm text-gray-300 hover:bg-dark-hover hover:text-white"
+            className="mb-3 flex items-center gap-2 py-2 px-3 rounded-monday text-sm text-monday-text hover:bg-monday-hover"
           >
             Gestión de Usuarios
           </Link>
         )}
         {navContent}
       </nav>
-      <div className="p-3 border-t border-dark-border">
+      <div className="p-3 border-t border-monday-border">
         {user && (
-          <div className="text-gray-500 text-xs truncate mb-2" title={user.nombre}>
+          <div className="text-monday-text-muted text-xs truncate mb-2" title={user.nombre}>
             {user.nombre} · {user.rol}
           </div>
         )}
         <button
           type="button"
           onClick={logout}
-          className="w-full py-2 px-3 rounded-monday text-sm text-gray-400 hover:bg-dark-hover hover:text-white border border-dark-border"
+          className="w-full py-2 px-3 rounded-monday text-sm text-monday-text-muted hover:bg-monday-hover hover:text-monday-text border border-monday-border"
         >
           Cerrar sesión
         </button>

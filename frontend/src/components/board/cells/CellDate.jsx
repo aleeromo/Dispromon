@@ -16,35 +16,37 @@ export default function CellDate({ value, onUpdate }) {
 
   if (editing) {
     return (
-      <div className="py-2 flex items-center gap-2">
+      <div className="h-full w-full flex items-center justify-center p-1 bg-white">
         <input
           type="date"
           value={val}
-          onChange={(e) => setVal(e.target.value)}
-          className="bg-dark-card border border-dark-border rounded px-2 py-1 text-sm text-white"
+          onChange={(e) => {
+            setVal(e.target.value);
+            if (e.target.value) {
+              onUpdate({ date: new Date(e.target.value).toISOString() });
+              setEditing(false);
+            }
+          }}
+          onBlur={() => setEditing(false)}
+          autoFocus
+          className="w-full h-full bg-white border-none outline-none text-[13px] text-monday-text cursor-pointer"
         />
-        <button
-          type="button"
-          onClick={handleSave}
-          className="px-2 py-1 rounded bg-accent text-white text-xs"
-        >
-          OK
-        </button>
       </div>
     );
   }
 
   const label = dateStr
-    ? format(parseISO(dateStr), "d MMM yyyy", { locale: es })
-    : 'Seleccionar fecha';
+    ? format(parseISO(dateStr), "d MMM", { locale: es })
+    : '-';
 
   return (
-    <button
-      type="button"
+    <div 
+      className="h-full w-full flex items-center justify-center cursor-pointer group hover:bg-monday-hover transition-colors"
       onClick={() => setEditing(true)}
-      className="w-full text-left px-3 py-2 rounded-monday text-sm text-gray-300 hover:bg-dark-hover min-h-[32px]"
     >
-      {label}
-    </button>
+      <span className={dateStr ? "text-[13px] text-monday-text" : "text-[13px] text-monday-text-muted opacity-0 group-hover:opacity-100 transition-opacity"}>
+        {label}
+      </span>
+    </div>
   );
 }

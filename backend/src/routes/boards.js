@@ -124,7 +124,11 @@ function fullBoardInclude() {
       include: {
         items: {
           orderBy: { position: 'asc' },
-          include: { values: true, asignado_a: true },
+          include: { 
+            values: true, 
+            usersAssigned: true,
+            updates: { include: { user: true } }
+          },
         },
       },
     },

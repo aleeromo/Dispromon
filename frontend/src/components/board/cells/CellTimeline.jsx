@@ -21,31 +21,34 @@ export default function CellTimeline({ value, onUpdate }) {
 
   if (editing) {
     return (
-      <div className="py-2 flex flex-col gap-2">
-        <input
-          type="date"
-          value={startVal}
-          onChange={(e) => setStartVal(e.target.value)}
-          className="bg-dark-card border border-dark-border rounded px-2 py-1 text-sm text-white"
-        />
-        <input
-          type="date"
-          value={endVal}
-          onChange={(e) => setEndVal(e.target.value)}
-          className="bg-dark-card border border-dark-border rounded px-2 py-1 text-sm text-white"
-        />
-        <div className="flex gap-1">
+      <div className="h-full w-full flex flex-col items-center justify-center p-1 bg-white border border-monday-primary shadow-sm rounded-monday absolute z-10 w-max left-[10%] pr-3">
+        <div className="flex items-center gap-2 mb-1">
+          <input
+            type="date"
+            value={startVal}
+            onChange={(e) => setStartVal(e.target.value)}
+            className="w-full bg-transparent border-none outline-none text-[12px] text-monday-text cursor-pointer"
+          />
+          <span className="text-monday-text-muted">-</span>
+          <input
+            type="date"
+            value={endVal}
+            onChange={(e) => setEndVal(e.target.value)}
+            className="w-full bg-transparent border-none outline-none text-[12px] text-monday-text cursor-pointer"
+          />
+        </div>
+        <div className="flex gap-1 self-end">
           <button
             type="button"
             onClick={handleSave}
-            className="px-2 py-1 rounded bg-accent text-white text-xs"
+            className="px-2 py-0.5 rounded bg-monday-primary text-white text-[11px] hover:opacity-90"
           >
-            OK
+            Guardar
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="px-2 py-1 rounded bg-dark-border text-gray-300 text-xs"
+            className="px-2 py-0.5 rounded bg-gray-100 text-monday-text text-[11px] hover:bg-gray-200"
           >
             Cancelar
           </button>
@@ -57,15 +60,18 @@ export default function CellTimeline({ value, onUpdate }) {
   const label =
     start && end
       ? `${format(parseISO(start), 'd MMM', { locale: es })} - ${format(parseISO(end), 'd MMM', { locale: es })}`
-      : 'Sin fechas';
+      : '-';
 
   return (
-    <button
-      type="button"
+    <div 
+      className="h-full w-full flex items-center justify-center cursor-pointer relative group hover:bg-monday-hover transition-colors"
       onClick={() => setEditing(true)}
-      className="w-full text-left px-3 py-2 rounded-monday text-sm text-gray-300 hover:bg-dark-hover min-h-[32px]"
     >
-      {label}
-    </button>
+      <div className={`absolute inset-y-1 mx-2 left-0 right-0 rounded-full flex items-center justify-center ${start && end ? 'bg-[#333333]' : ''}`}>
+        <span className={start && end ? "text-[12px] text-white px-2 truncate" : "text-[13px] text-monday-text-muted opacity-0 group-hover:opacity-100 transition-opacity"}>
+          {label}
+        </span>
+      </div>
+    </div>
   );
 }

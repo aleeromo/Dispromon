@@ -45,17 +45,17 @@ export default function BoardPage() {
   if (loading || !board) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[40vh]">
-        <span className="text-gray-400">Cargando board...</span>
+        <span className="text-monday-text-muted">Cargando board...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="shrink-0 flex flex-col gap-3 px-6 py-4 border-b border-dark-border bg-dark-card">
+    <div className="flex flex-col h-full bg-monday-bg">
+      <header className="shrink-0 flex flex-col gap-3 px-6 py-4 border-b border-monday-border bg-white">
         <Breadcrumbs items={breadcrumbItems} />
         <div className="flex items-center gap-4 flex-wrap">
-          <h1 className="text-xl font-semibold text-white">{board.name}</h1>
+          <h1 className="text-xl font-semibold text-monday-text">{board.name}</h1>
           <nav className="flex gap-1">
             {VIEWS.map((v) => (
               <button
@@ -64,8 +64,8 @@ export default function BoardPage() {
                 onClick={() => setView(v.id)}
                 className={`px-4 py-2 rounded-monday text-sm font-medium transition-colors ${
                   view === v.id
-                    ? 'bg-accent text-white'
-                    : 'text-gray-400 hover:bg-dark-hover hover:text-white'
+                    ? 'bg-monday-primary text-white'
+                    : 'text-monday-text-muted hover:bg-monday-hover hover:text-monday-text'
                 }`}
               >
                 {v.label}

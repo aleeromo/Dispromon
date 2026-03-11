@@ -8,27 +8,28 @@
 
 body {
   margin: 0;
-  background: #121212;
-  color: #ffffff;
-  font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+  background-color: #f5f6f8; /* monday-bg */
+  color: #323338; /* monday-text */
+  font-family: 'Roboto', 'Inter', system-ui, sans-serif;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* Scrollbar oscuro */
+/* Scrollbar estilo claro */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: #c3c6d4;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #505050;
+  background: #aab0c6;
 }

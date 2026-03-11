@@ -290,3 +290,38 @@ export async function uploadFile(file) {
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
+
+export async function getTasks() {
+  const r = await fetchWithAuth(API + '/tasks');
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function markTaskRead(id) {
+  const r = await fetchWithAuth(API + '/tasks/' + encodeURIComponent(id) + '/read', { method: 'PATCH' });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function getUpdates(itemId) {
+  const r = await fetchWithAuth(API + '/updates/' + encodeURIComponent(itemId));
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function postUpdate(itemId, content) {
+  const r = await fetchWithAuth(API + '/updates/' + encodeURIComponent(itemId), {
+    method: 'POST',
+    body: { content },
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+export async function deleteUpdate(updateId) {
+  const r = await fetchWithAuth(API + '/updates/' + encodeURIComponent(updateId), {
+    method: 'DELETE',
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}

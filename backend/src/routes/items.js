@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     const where = groupId ? { groupId } : (boardId ? { group: { boardId } } : {});
     const items = await prisma.item.findMany({
       where,
-      include: { values: true },
+      include: { values: true, usersAssigned: true, updates: { include: { user: true } } },
       orderBy: { position: 'asc' },
     });
     res.json(items);
@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
 
     const full = await prisma.item.findUnique({
       where: { id: item.id },
-      include: { values: true, asignado_a: true },
+      include: { values: true, usersAssigned: true, updates: { include: { user: true } } },
     });
     res.json(full);
   } catch (e) {
@@ -79,8 +79,13 @@ router.patch('/:id', async (req, res) => {
   try {
     const {
       name, description, materials, finalMeasures, position, groupId,
-      asignado_a_id, estatus_ventas, estatus_taller, fecha_inicio_produccion, fecha_fin_produccion,
+      usersAssignedIds, dateRangeStart, dateRangeEnd, estatus_ventas, estatus_taller, fecha_inicio_produccion, fecha_fin_produccion, ruta_archivo,
     } = req.body;
+    
+    // We need the old item to detect changes for Tasks and AuditLogs
+    const oldItem = await prisma.item.findUnique({ where: { id: req.params.id } });
+    if (!oldItem) return res.status(404).json({ error: 'Item no encontrado' });
+
     const data = {};
     if (name !== undefined) data.name = name;
     if (description !== undefined) data.description = description;
@@ -88,16 +93,55 @@ router.patch('/:id', async (req, res) => {
     if (finalMeasures !== undefined) data.finalMeasures = finalMeasures;
     if (position !== undefined) data.position = position;
     if (groupId !== undefined) data.groupId = groupId;
-    if (asignado_a_id !== undefined) data.asignado_a_id = asignado_a_id || null;
+    if (dateRangeStart !== undefined) data.dateRangeStart = dateRangeStart ? new Date(dateRangeStart) : null;
+    if (dateRangeEnd !== undefined) data.dateRangeEnd = dateRangeEnd ? new Date(dateRangeEnd) : null;
     if (estatus_ventas !== undefined) data.estatus_ventas = estatus_ventas || null;
     if (estatus_taller !== undefined) data.estatus_taller = estatus_taller || null;
     if (fecha_inicio_produccion !== undefined) data.fecha_inicio_produccion = fecha_inicio_produccion ? new Date(fecha_inicio_produccion) : null;
     if (fecha_fin_produccion !== undefined) data.fecha_fin_produccion = fecha_fin_produccion ? new Date(fecha_fin_produccion) : null;
+    if (ruta_archivo !== undefined) data.ruta_archivo = ruta_archivo;
+
+    if (usersAssignedIds !== undefined && Array.isArray(usersAssignedIds)) {
+      data.usersAssigned = {
+        set: usersAssignedIds.map(id => ({ id }))
+      };
+    }
+
     const item = await prisma.item.update({
       where: { id: req.params.id },
       data,
-      include: { asignado_a: true },
+      include: { usersAssigned: true, updates: { include: { user: true } } },
     });
+
+    const currentUserId = req.user?.id; // Assuming authMiddleware sets req.user
+
+    // 1. Audit Logs for Status Changes
+    if (estatus_ventas !== undefined && oldItem.estatus_ventas !== estatus_ventas) {
+      await prisma.auditLog.create({
+        data: {
+          action: 'CAMBIO_ESTATUS_VENTAS',
+          entity: 'ITEM',
+          entityId: item.id,
+          details: JSON.stringify({ oldStatus: oldItem.estatus_ventas, newStatus: estatus_ventas }),
+          userId: currentUserId,
+        }
+      });
+    }
+
+    if (estatus_taller !== undefined && oldItem.estatus_taller !== estatus_taller) {
+      await prisma.auditLog.create({
+        data: {
+          action: 'CAMBIO_ESTATUS_TALLER',
+          entity: 'ITEM',
+          entityId: item.id,
+          details: JSON.stringify({ oldStatus: oldItem.estatus_taller, newStatus: estatus_taller }),
+          userId: currentUserId,
+        }
+      });
+    }
+
+    // Removed single user assignments auditing and tasks generation as we moved to a multiple assignments strategy
+
     res.json(item);
   } catch (e) {
     res.status(500).json({ error: e.message });

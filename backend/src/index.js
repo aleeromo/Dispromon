@@ -13,6 +13,11 @@ import columnRoutes from './routes/columns.js';
 import valuesRoutes from './routes/values.js';
 import uploadRoutes from './routes/upload.js';
 import usersRoutes from './routes/users.js';
+import searchRoutes from './routes/search.js';
+import tasksRoutes from './routes/tasks.js';
+import updatesRoutes from './routes/updates.js';
+import cron from 'node-cron';
+import { runBackup } from '../scripts/backup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -33,6 +38,15 @@ app.use('/api/columns', authMiddleware, columnRoutes);
 app.use('/api/values', authMiddleware, valuesRoutes);
 app.use('/api/upload', authMiddleware, uploadRoutes);
 app.use('/api/users', authMiddleware, usersRoutes);
+app.use('/api/search', authMiddleware, searchRoutes);
+app.use('/api/tasks', authMiddleware, tasksRoutes);
+app.use('/api/updates', authMiddleware, updatesRoutes);
+
+// Programar respaldo diario a las 02:00 AM
+cron.schedule('0 2 * * *', () => {
+  console.log('[Cron] Ejecutando respaldo automático...');
+  runBackup();
+});
 
 function start(port) {
   const server = app.listen(port, () => {
